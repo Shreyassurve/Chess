@@ -1,43 +1,18 @@
 const chess = new Chess();
 const chessboard = document.getElementById('chessboard');
 const resetButton = document.getElementById('resetButton');
-const startButton = document.getElementById('startButton');
 const backButton = document.getElementById('backButton');
 const forwardButton = document.getElementById('forwardButton');
 const gameStatus = document.getElementById('gameStatus');
 const gameOverMessage = document.getElementById('gameOverMessage');
 const multiplayerButton = document.getElementById('multiplayerButton');
 const computerButton = document.getElementById('computerButton');
-const whiteTimerDisplay = document.getElementById('whiteTimer');
-const blackTimerDisplay = document.getElementById('blackTimer');
 
 let selectedSquare = null;
 let moveHistory = [];
 let currentMoveIndex = -1;
 let isComputerMode = false;
 const MAX_DEPTH = 2;
-const TIME_LIMIT = 10 * 60 * 1000; // 10 minutes in milliseconds
-let whiteTime = TIME_LIMIT;
-let blackTime = TIME_LIMIT;
-let timerInterval = null;
-
-// Start Button functionality
-startButton.addEventListener('click', () => {
-    chess.reset();
-    moveHistory = [];
-    currentMoveIndex = -1;
-    selectedSquare = null;
-    whiteTime = TIME_LIMIT;
-    blackTime = TIME_LIMIT;
-    stopTimers();
-    renderBoard();
-    gameOverMessage.innerText = '';
-    updateTimersDisplay();
-    gameStatus.innerText = "Game started! Player's turn";
-    
-    // Start the timers when the game starts
-    startTimers();
-});
 
 // Render the board
 function renderBoard() {
@@ -79,21 +54,13 @@ function getPieceIcon(piece) {
 function handleSquareClick(square) {
     const piece = chess.get(square);
 
-    // Remove previously highlighted square and legal moves
-    const previouslySelected = document.querySelector('.highlighted');
-    if (previouslySelected) {
-        previouslySelected.classList.remove('highlighted');
-    }
-
-    const previouslyHighlightedMoves = document.querySelectorAll('.highlighted-move');
-    previouslyHighlightedMoves.forEach(move => move.classList.remove('highlighted-move'));
-
+    // Select or move piece only if the game is in Player vs Player mode or it's the player's turn in AI mode
     if (!isComputerMode || chess.turn() === 'w') {
         if (selectedSquare) {
             const move = chess.move({
                 from: selectedSquare,
                 to: square,
-                promotion: 'q'
+                promotion: 'q' // Automatically promote to Queen
             });
 
             if (move) {
@@ -102,45 +69,17 @@ function handleSquareClick(square) {
                 selectedSquare = null;
                 renderBoard();
 
-                // Switch timers and update time display
-                switchTimers();
-
+                // If computer mode is enabled, let the AI make a move
                 if (isComputerMode && chess.turn() === 'b') {
-                    setTimeout(makeComputerMove, 500);
+                    setTimeout(makeComputerMove, 500); 
                 }
             } else {
                 selectedSquare = null;
             }
         } else if (piece && piece.color === chess.turn()) {
             selectedSquare = square;
-            highlightSelectedPiece(square);
-            highlightLegalMoves(square);
         }
     }
-}
-
-// Highlight the selected piece (square)
-function highlightSelectedPiece(square) {
-    const squareDiv = document.querySelector(`[data-square="${square}"]`);
-    if (squareDiv) {
-        squareDiv.classList.add('highlighted');
-    }
-}
-
-// Highlight the legal moves for the selected piece
-function highlightLegalMoves(square) {
-    const legalMoves = chess.moves({
-        square: square,
-        verbose: true
-    });
-
-    legalMoves.forEach(move => {
-        const targetSquare = move.to;
-        const squareDiv = document.querySelector(`[data-square="${targetSquare}"]`);
-        if (squareDiv) {
-            squareDiv.classList.add('highlighted-move');
-        }
-    });
 }
 
 // AI Move (Minimax with Alpha-Beta Pruning)
@@ -152,7 +91,6 @@ function makeComputerMove() {
         currentMoveIndex++;
         renderBoard();
         updateGameStatus();
-        switchTimers();
     }
 }
 
@@ -228,57 +166,13 @@ function evaluateBoard() {
 function updateGameStatus() {
     if (chess.in_checkmate()) {
         gameOverMessage.innerText = `${chess.turn().toUpperCase()} wins by checkmate!`;
-        stopTimers();
     } else if (chess.in_draw()) {
         gameOverMessage.innerText = 'Game is a draw!';
-        stopTimers();
     } else if (chess.in_check()) {
         gameStatus.innerText = `${chess.turn().toUpperCase()} is in check!`;
     } else {
         gameStatus.innerText = `${chess.turn().toUpperCase()}'s turn`;
     }
-}
-
-// Timer functionality
-function startTimers() {
-    stopTimers();
-    timerInterval = setInterval(() => {
-        if (chess.turn() === 'w') {
-            whiteTime -= 1000;
-            if (whiteTime <= 0) {
-                gameOverMessage.innerText = 'Black wins on time!';
-                stopTimers();
-            }
-        } else {
-            blackTime -= 1000;
-            if (blackTime <= 0) {
-                gameOverMessage.innerText = 'White wins on time!';
-                stopTimers();
-            }
-        }
-        updateTimersDisplay();
-    }, 1000);
-}
-
-function stopTimers() {
-    clearInterval(timerInterval);
-}
-
-function switchTimers() {
-    if (!chess.game_over()) {
-        startTimers();
-    }
-}
-
-function updateTimersDisplay() {
-    whiteTimerDisplay.innerText = formatTime(whiteTime);
-    blackTimerDisplay.innerText = formatTime(blackTime);
-}
-
-function formatTime(ms) {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
 // Reset button functionality
@@ -287,28 +181,44 @@ resetButton.addEventListener('click', () => {
     moveHistory = [];
     currentMoveIndex = -1;
     selectedSquare = null;
-    whiteTime = TIME_LIMIT;
-    blackTime = TIME_LIMIT;
-    stopTimers();
     renderBoard();
     gameOverMessage.innerText = '';
-    updateTimersDisplay();
+});
+
+// Back button functionality
+backButton.addEventListener('click', () => {
+    if (currentMoveIndex >= 0) {
+        chess.undo();
+        currentMoveIndex--;
+        renderBoard();
+        updateGameStatus();
+    }
+});
+
+// Forward button functionality
+forwardButton.addEventListener('click', () => {
+    if (currentMoveIndex < moveHistory.length - 1) {
+        const move = moveHistory[currentMoveIndex + 1];
+        chess.move(move);
+        currentMoveIndex++;
+        renderBoard();
+        updateGameStatus();
+    }
 });
 
 // Multiplayer Button (switch to Player vs Player)
 multiplayerButton.addEventListener('click', () => {
-    isComputerMode = false;
+    isComputerMode = false; // Disable AI mode
     gameStatus.innerText = "Player vs Player mode";
     renderBoard();
 });
 
 // Computer Button (switch to Player vs AI)
 computerButton.addEventListener('click', () => {
-    isComputerMode = true;
+    isComputerMode = true; // Enable AI mode
     gameStatus.innerText = "Player vs Computer mode";
     renderBoard();
 });
 
-// Initialize the game board and make sure timer is not started
+// Initialize the game board
 renderBoard();
-updateTimersDisplay();

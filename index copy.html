@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game with Timer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Nunito', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h2 {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-primary {
+            background-color: #4caf50;
+            border-color: #45a049;
+        }
+
+        .btn-success {
+            background-color: #008CBA;
+            border-color: #007B9F;
+        }
+
+        .btn-warning {
+            background-color: #f0ad4e;
+            border-color: #ec971f;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #5a6268;
+        }
+
+        .timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        #whiteTimer { color: #4caf50; }
+        #blackTimer { color: #d9534f; }
+
+        /* Chessboard Styles */
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 75px);
+            grid-template-rows: repeat(8, 75px);
+            gap: 0;
+            margin: 30px auto;
+            border: 4px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+        .container {
+            text-align: center;
+            background-color: #F5F5F5;
+            padding: 2px;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 620px;
+        }
+
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 70.5px);
+            grid-template-rows: repeat(8, 71px);
+            gap: 0px;
+            margin: 17px auto;
+            border: 27px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+        .square {
+            width: 75px;
+            height: 75px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            border-radius: 5px;
+        }
+
+        .square:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
+        }
+
+        .white {
+            background-color: #f0d9b5;
+        }
+
+        .black {
+            background-color: #b58863;
+        }
+
+        .highlighted {
+            border: 3px solid yellow; /* Highlight color for the selected piece */
+        }
+
+        .highlighted-move {
+            background-color: rgba(0, 255, 0, 0.3); /* Highlight color for legal moves */
+        }
+
+        #gameStatus {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        #gameOverMessage {
+            font-size: 1.8em;
+            color: #d9534f;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .btn-container .btn {
+            width: 160px;
+        }
+
+        /* Centering the timers */
+        #timers {
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+
+        .timer span {
+            font-weight: bold;
+        }
+        .btn {
+            margin-top: 15px;
+            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #555;
+        }
+
+        .text-brown {
+            color: #ffffff; /* Custom brown color for white pieces */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Chess Game with Timer</h2>
+    
+    <!-- Timer displays -->
+    <div id="timers">
+        <div class="timer">White Timer: <span id="whiteTimer">10:00</span></div>
+        <div class="timer">Black Timer: <span id="blackTimer">10:00</span></div>
+    </div>
+
+    <!-- Chessboard -->
+    <div id="chessboard" class="chess-board"></div>
+
+    <!-- Game status messages -->
+    <div id="gameStatus">White's Turn</div>
+    <div id="gameOverMessage"></div>
+
+    <!-- Control Buttons -->
+    <div class="btn-container">
+        <button id="resetButton" class="btn btn-warning">Reset Game</button>
+        <button id="multiplayerButton" class="btn btn-primary">Multiplayer</button>
+        <button id="computerButton" class="btn btn-success">Play vs Computer</button>
+        <button id="startButton" class="btn btn-secondary">Start Game</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>

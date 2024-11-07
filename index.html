@@ -4,10 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Your previous CSS styles */
+        /* Global Styles */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f9f9f9;
+            padding: 30px;
+            margin: 0;
+        }
+
+        h2 {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-primary {
+            background-color: #4caf50;
+            border-color: #45a049;
+        }
+
+        .btn-success {
+            background-color: #008CBA;
+            border-color: #007B9F;
+        }
+
+        .btn-warning {
+            background-color: #f0ad4e;
+            border-color: #ec971f;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #5a6268;
+        }
+
+        /* Chessboard Styles */
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 75px);
+            grid-template-rows: repeat(8, 75px);
+            gap: 2px;
+            margin: 30px auto;
+            border: 4px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .square {
+            width: 75px;
+            height: 75px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .square:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
+        }
+
+        .white {
+            background-color: #f0d9b5;
+        }
+
+        .black {
+            background-color: #b58863;
+        }
+
+        .text-brown {
+            color: #5f3b2d;
+        }
+
+        .text-dark {
+            color: #3c3c3c;
+        }
+
+        /* Status and Message Styles */
+        #gameStatus {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #333;
+        }
+
+        #gameOverMessage {
+            font-size: 1.8em;
+            color: #d9534f;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        /* Control Button Container */
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .btn-container .btn {
+            width: 160px;
+        }
+
+        /* Mode Switch Button Styles */
+        #multiplayerButton,
+        #computerButton {
+            margin-right: 15px;
+        }
+
+        /* Highlight Active Button */
+        .active-button {
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+            transform: scale(1.05);
+        }
         .btn {
             margin: 5px;
             font-size: 16px;
@@ -33,20 +169,21 @@
         .container {
             text-align: center;
             background-color: #F5F5F5;
-            padding:2px;
-            border-radius: 10px;
+            padding: 2px;
+            border-radius: 16px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            max-width: 570px;
+            max-width: 620px;
         }
 
-        .chessboard {
+        .chess-board {
             display: grid;
-            grid-template-columns: repeat(8, 70px);
-            grid-template-rows: repeat(8, 70px);
-            margin: 20px auto;
-            border: 3px solid #333;
-            border-radius: 5px;
-            overflow: hidden;
+            grid-template-columns: repeat(8, 70.5px);
+            grid-template-rows: repeat(8, 71px);
+            gap: 0px;
+            margin: 17px auto;
+            border: 27px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         }
 
         .square {
@@ -103,27 +240,52 @@
         }
 
         .text-brown {
-            color: #8B4513; /* Custom brown color for white pieces */
+            color: #ffffff; /* Custom brown color for white pieces */
         }
+        .highlight {
+            border: 2px solid #ff0; /* Yellow border */
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
+        }
+
+        /* Optional: Styling for invalid move feedback */
+        #gameStatus {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+
 
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="my-4">Chess Game</h1>
-        <div id="chessboard" class="chessboard"></div>
-        
-        <div class="d-flex justify-content-center mt-3">
-            <button id="backButton" class="btn">Back</button>
-            <button id="resetButton" class="btn">Reset</button>
-            <button id="forwardButton" class="btn">Forward</button>
-        </div>
 
-        <div id="gameStatus" class="game-status"></div>
-        <div id="gameOverMessage" class="game-over"></div>
+<div class="container">
+    <h2 class="text-center my-3">Chess Game</h2>
+
+    <!-- Game Mode Buttons -->
+    <div class="text-center mb-3">
+        <button id="multiplayerButton" class="btn btn-primary active-button">Multiplayer</button>
+        <button id="computerButton" class="btn btn-success">Play against Computer</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
-    <script src="game.js"></script>
+    <div id="gameStatus" class="text-center mb-3">White's turn</div>
+    <div id="gameOverMessage" class="text-center text-danger"></div>
+
+    <!-- Chessboard -->
+    <div id="chessboard" class="chess-board"></div>
+
+    <!-- Control Buttons -->
+    <div class="btn-container">
+        <button id="resetButton" class="btn btn-warning">Reset Game</button>
+        <button id="backButton" class="btn btn-secondary">Back</button>
+        <button id="forwardButton" class="btn btn-secondary">Forward</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="game.js"></script>
+
 </body>
 </html>

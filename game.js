@@ -1,45 +1,44 @@
-const chess = new Chess(); // Create a new Chess instance
+const chess = new Chess();
 const chessboard = document.getElementById('chessboard');
 const resetButton = document.getElementById('resetButton');
 const backButton = document.getElementById('backButton');
 const forwardButton = document.getElementById('forwardButton');
 const gameStatus = document.getElementById('gameStatus');
 const gameOverMessage = document.getElementById('gameOverMessage');
+const multiplayerButton = document.getElementById('multiplayerButton');
+const computerButton = document.getElementById('computerButton');
+
 let selectedSquare = null;
 let moveHistory = [];
 let currentMoveIndex = -1;
+let isComputerMode = false; // By default, set to Multiplayer mode
 
-// Render the chessboard and pieces
+// Max depth for AI
+const MAX_DEPTH = 2;
+
+// Render the board
 function renderBoard() {
-    chessboard.innerHTML = ''; // Clear the board
-
+    chessboard.innerHTML = '';
     chess.board().forEach((row, rowIndex) => {
         row.forEach((square, colIndex) => {
             const squareDiv = document.createElement('div');
-            squareDiv.classList.add('square');
-            squareDiv.classList.add((rowIndex + colIndex) % 2 === 0 ? 'white' : 'black');
+            squareDiv.classList.add('square', (rowIndex + colIndex) % 2 === 0 ? 'white' : 'black');
             const squareName = `${String.fromCharCode(97 + colIndex)}${8 - rowIndex}`;
             squareDiv.setAttribute('data-square', squareName);
 
-            // Add piece icon if there's a piece on the square
             if (square) {
                 const pieceClass = getPieceIcon(square);
                 squareDiv.innerHTML = `<i class="fas ${pieceClass}"></i>`;
-                squareDiv.setAttribute('data-piece', square.type);
-                squareDiv.setAttribute('data-color', square.color);
             }
 
-            // Add click event for piece movement
             squareDiv.addEventListener('click', () => handleSquareClick(squareName));
-
             chessboard.appendChild(squareDiv);
         });
     });
-
     updateGameStatus();
 }
 
-// Returns the appropriate icon class for a piece
+// Get piece icon class for rendering
 function getPieceIcon(piece) {
     const pieceIcons = {
         'p': 'fa-chess-pawn',
@@ -53,80 +52,113 @@ function getPieceIcon(piece) {
     return `${pieceIcons[piece.type]} ${colorClass}`;
 }
 
-// Handle board square clicks for piece movement
+// Handle square clicks for human moves
 function handleSquareClick(square) {
     const piece = chess.get(square);
-
-    // If a square is already selected, attempt to move the piece
-    if (selectedSquare) {
+    if (selectedSquare && chess.turn() === 'w') {
         const move = chess.move({
             from: selectedSquare,
             to: square,
-            promotion: 'q' // Always promote to queen for simplicity
+            promotion: 'q'
         });
 
-        // If the move is legal, clear selection and re-render board
         if (move) {
-            // Record the move and update history
-            moveHistory = moveHistory.slice(0, currentMoveIndex + 1); // Trim forward history if any
             moveHistory.push(move);
             currentMoveIndex++;
-
             selectedSquare = null;
             renderBoard();
+
+            if (!chess.game_over() && isComputerMode && chess.turn() === 'b') {
+                setTimeout(makeComputerMove, 500);  // AI makes its move
+            }
         } else {
-            // Clear selection if the move is illegal
             selectedSquare = null;
         }
-    } else if (piece && piece.color === chess.turn()) {
-        // If no square is selected, allow the current player to select their piece
+    } else if (piece && piece.color === 'w' && chess.turn() === 'w') {
         selectedSquare = square;
     }
 }
 
-// Undo last move
-function undoMove() {
-    if (currentMoveIndex >= 0) {
-        chess.undo();
-        currentMoveIndex--;
-        renderBoard();
-    }
-}
-
-// Redo move
-function redoMove() {
-    if (currentMoveIndex < moveHistory.length - 1) {
-        const move = moveHistory[currentMoveIndex + 1];
-        chess.move(move);
+// AI Move (Minimax with Alpha-Beta Pruning)
+function makeComputerMove() {
+    const bestMove = minimaxRoot(MAX_DEPTH, true);
+    if (bestMove) {
+        chess.move(bestMove);
+        moveHistory.push(bestMove);
         currentMoveIndex++;
         renderBoard();
     }
 }
 
-// Animate the move of a piece from one square to another
-function animateMove(fromSquare, toSquare) {
-    const fromElem = document.querySelector(`[data-square="${fromSquare}"]`);
-    const toElem = document.querySelector(`[data-square="${toSquare}"]`);
-    const pieceElem = fromElem.querySelector('i');
+// Minimax root function to start search
+function minimaxRoot(depth, isMaximizingPlayer) {
+    let bestMove = null;
+    let bestValue = -Infinity;
+    const moves = chess.moves({ verbose: true });
 
-    const fromRect = fromElem.getBoundingClientRect();
-    const toRect = toElem.getBoundingClientRect();
+    for (const move of moves) {
+        chess.move(move);
+        const value = minimax(depth - 1, -Infinity, Infinity, !isMaximizingPlayer);
+        chess.undo();
 
-    const deltaX = toRect.left - fromRect.left;
-    const deltaY = toRect.top - fromRect.top;
-
-    pieceElem.style.transition = 'transform 0.3s ease';
-    pieceElem.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
-    // Reset transform after animation
-    setTimeout(() => {
-        pieceElem.style.transition = '';
-        pieceElem.style.transform = '';
-        renderBoard();
-    }, 300);
+        if (value > bestValue) {
+            bestValue = value;
+            bestMove = move;
+        }
+    }
+    return bestMove;
 }
 
-// Update the game status (e.g., check, checkmate, turn information)
+// Minimax with Alpha-Beta Pruning
+function minimax(depth, alpha, beta, isMaximizingPlayer) {
+    if (depth === 0 || chess.game_over()) {
+        return evaluateBoard();
+    }
+
+    const moves = chess.moves({ verbose: true });
+
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            chess.move(move);
+            const eval = minimax(depth - 1, alpha, beta, false);
+            chess.undo();
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+            chess.move(move);
+            const eval = minimax(depth - 1, alpha, beta, true);
+            chess.undo();
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+}
+
+// Simple evaluation function (material-based)
+function evaluateBoard() {
+    const values = { p: 1, r: 5, n: 3, b: 3.5, q: 9, k: 1000 };
+    let evaluation = 0;
+
+    chess.board().forEach(row => {
+        row.forEach(piece => {
+            if (piece) {
+                const value = values[piece.type];
+                evaluation += piece.color === 'w' ? value : -value;
+            }
+        });
+    });
+    return evaluation;
+}
+
+// Update the game status (e.g., turn, checkmate)
 function updateGameStatus() {
     if (chess.in_checkmate()) {
         gameOverMessage.innerText = `${chess.turn().toUpperCase()} wins by checkmate!`;
@@ -139,7 +171,7 @@ function updateGameStatus() {
     }
 }
 
-// Reset game functionality
+// Reset button functionality
 resetButton.addEventListener('click', () => {
     chess.reset();
     moveHistory = [];
@@ -150,10 +182,37 @@ resetButton.addEventListener('click', () => {
 });
 
 // Back button functionality
-backButton.addEventListener('click', undoMove);
+backButton.addEventListener('click', () => {
+    if (currentMoveIndex >= 0) {
+        chess.undo();
+        currentMoveIndex--;
+        renderBoard();
+    }
+});
 
 // Forward button functionality
-forwardButton.addEventListener('click', redoMove);
+forwardButton.addEventListener('click', () => {
+    if (currentMoveIndex < moveHistory.length - 1) {
+        const move = moveHistory[currentMoveIndex + 1];
+        chess.move(move);
+        currentMoveIndex++;
+        renderBoard();
+    }
+});
+
+// Multiplayer Button (switch to Player vs Player)
+multiplayerButton.addEventListener('click', () => {
+    isComputerMode = false;
+    gameStatus.innerText = "Player vs Player mode";
+    renderBoard();
+});
+
+// Computer Button (switch to Player vs AI)
+computerButton.addEventListener('click', () => {
+    isComputerMode = true;
+    gameStatus.innerText = "Player vs Computer mode";
+    renderBoard();
+});
 
 // Initialize the game board
 renderBoard();

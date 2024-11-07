@@ -11,9 +11,7 @@ const computerButton = document.getElementById('computerButton');
 let selectedSquare = null;
 let moveHistory = [];
 let currentMoveIndex = -1;
-let isComputerMode = false; // By default, set to Multiplayer mode
-
-// Max depth for AI
+let isComputerMode = false;
 const MAX_DEPTH = 2;
 
 // Render the board
@@ -55,27 +53,32 @@ function getPieceIcon(piece) {
 // Handle square clicks for human moves
 function handleSquareClick(square) {
     const piece = chess.get(square);
-    if (selectedSquare && chess.turn() === 'w') {
-        const move = chess.move({
-            from: selectedSquare,
-            to: square,
-            promotion: 'q'
-        });
 
-        if (move) {
-            moveHistory.push(move);
-            currentMoveIndex++;
-            selectedSquare = null;
-            renderBoard();
+    // Select or move piece only if the game is in Player vs Player mode or it's the player's turn in AI mode
+    if (!isComputerMode || chess.turn() === 'w') {
+        if (selectedSquare) {
+            const move = chess.move({
+                from: selectedSquare,
+                to: square,
+                promotion: 'q' // Automatically promote to Queen
+            });
 
-            if (!chess.game_over() && isComputerMode && chess.turn() === 'b') {
-                setTimeout(makeComputerMove, 500);  // AI makes its move
+            if (move) {
+                moveHistory.push(move);
+                currentMoveIndex++;
+                selectedSquare = null;
+                renderBoard();
+
+                // If computer mode is enabled, let the AI make a move
+                if (isComputerMode && chess.turn() === 'b') {
+                    setTimeout(makeComputerMove, 500); 
+                }
+            } else {
+                selectedSquare = null;
             }
-        } else {
-            selectedSquare = null;
+        } else if (piece && piece.color === chess.turn()) {
+            selectedSquare = square;
         }
-    } else if (piece && piece.color === 'w' && chess.turn() === 'w') {
-        selectedSquare = square;
     }
 }
 
@@ -87,6 +90,7 @@ function makeComputerMove() {
         moveHistory.push(bestMove);
         currentMoveIndex++;
         renderBoard();
+        updateGameStatus();
     }
 }
 
@@ -187,6 +191,7 @@ backButton.addEventListener('click', () => {
         chess.undo();
         currentMoveIndex--;
         renderBoard();
+        updateGameStatus();
     }
 });
 
@@ -197,19 +202,20 @@ forwardButton.addEventListener('click', () => {
         chess.move(move);
         currentMoveIndex++;
         renderBoard();
+        updateGameStatus();
     }
 });
 
 // Multiplayer Button (switch to Player vs Player)
 multiplayerButton.addEventListener('click', () => {
-    isComputerMode = false;
+    isComputerMode = false; // Disable AI mode
     gameStatus.innerText = "Player vs Player mode";
     renderBoard();
 });
 
 // Computer Button (switch to Player vs AI)
 computerButton.addEventListener('click', () => {
-    isComputerMode = true;
+    isComputerMode = true; // Enable AI mode
     gameStatus.innerText = "Player vs Computer mode";
     renderBoard();
 });

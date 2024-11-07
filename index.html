@@ -297,6 +297,25 @@
             color: #ffffff; /* Custom brown color for white pieces */
         }
 
+        .promotion-dialog {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none; /* Hide by default */
+    text-align: center;
+}
+.promotion-dialog button {
+    margin: 5px;
+    padding: 10px;
+    font-size: 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
 
 
 
@@ -314,6 +333,16 @@
         <div class="timer">White Timer: <span id="whiteTimer">10:00</span></div>
         <div class="timer">Black Timer: <span id="blackTimer">10:00</span></div>
     </div>
+
+    <!-- Promotion Dialog -->
+<div id="promotionDialog" class="promotion-dialog" style="display: none;">
+    <h3>Select Promotion Piece</h3>
+    <button id="promoteToQueen" class="btn btn-warning">Queen</button>
+    <button id="promoteToRook" class="btn btn-primary">Rook</button>
+    <button id="promoteToBishop" class="btn btn-success">Bishop</button>
+    <button id="promoteToKnight" class="btn btn-info">Knight</button>
+</div>
+
 
     <!-- Chessboard -->
     <div id="chessboard" class="chess-board"></div>

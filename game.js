@@ -227,8 +227,13 @@ function evaluateBoard() {
 // Update the game status (e.g., turn, checkmate)
 function updateGameStatus() {
     if (chess.in_checkmate()) {
-        gameOverMessage.innerText = `${chess.turn().toUpperCase()} wins by checkmate!`;
-        stopTimers();
+        if (chess.turn() === 'w') {
+            gameOverMessage.textContent = "Black's Win!";
+            stopTimers();
+        } else {
+            gameOverMessage.textContent = "White's Win!";
+            stopTimers();
+        }
     } else if (chess.in_draw()) {
         gameOverMessage.innerText = 'Game is a draw!';
         stopTimers();

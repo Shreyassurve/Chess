@@ -1,16 +1,19 @@
 const chess = new Chess(); // Create a new Chess instance
 const chessboard = document.getElementById('chessboard');
 const resetButton = document.getElementById('resetButton');
+const backButton = document.getElementById('backButton');
+const forwardButton = document.getElementById('forwardButton');
 const gameStatus = document.getElementById('gameStatus');
 const gameOverMessage = document.getElementById('gameOverMessage');
 let selectedSquare = null;
+let moveHistory = [];
+let currentMoveIndex = -1;
 
 // Render the chessboard and pieces
 function renderBoard() {
     chessboard.innerHTML = ''; // Clear the board
 
-    const board = chess.board();
-    board.forEach((row, rowIndex) => {
+    chess.board().forEach((row, rowIndex) => {
         row.forEach((square, colIndex) => {
             const squareDiv = document.createElement('div');
             squareDiv.classList.add('square');
@@ -46,11 +49,15 @@ function getPieceIcon(piece) {
         'q': 'fa-chess-queen',
         'k': 'fa-chess-king'
     };
-    return pieceIcons[piece.type] + (piece.color === 'w' ? ' text-light' : ' text-dark');
+    const colorClass = piece.color === 'w' ? 'text-brown' : 'text-dark';
+    return `${pieceIcons[piece.type]} ${colorClass}`;
 }
 
 // Handle board square clicks for piece movement
 function handleSquareClick(square) {
+    const piece = chess.get(square);
+
+    // If a square is already selected, attempt to move the piece
     if (selectedSquare) {
         const move = chess.move({
             from: selectedSquare,
@@ -58,16 +65,41 @@ function handleSquareClick(square) {
             promotion: 'q' // Always promote to queen for simplicity
         });
 
+        // If the move is legal, clear selection and re-render board
         if (move) {
-            animateMove(selectedSquare, square);
-            renderBoard(); // Re-render the board after the move
+            // Record the move and update history
+            moveHistory = moveHistory.slice(0, currentMoveIndex + 1); // Trim forward history if any
+            moveHistory.push(move);
+            currentMoveIndex++;
+
+            selectedSquare = null;
+            renderBoard();
+        } else {
+            // Clear selection if the move is illegal
+            selectedSquare = null;
         }
-        selectedSquare = null;
-    } else {
-        const piece = chess.get(square);
-        if (piece && piece.color === chess.turn()) {
-            selectedSquare = square; // Select the piece to move
-        }
+    } else if (piece && piece.color === chess.turn()) {
+        // If no square is selected, allow the current player to select their piece
+        selectedSquare = square;
+    }
+}
+
+// Undo last move
+function undoMove() {
+    if (currentMoveIndex >= 0) {
+        chess.undo();
+        currentMoveIndex--;
+        renderBoard();
+    }
+}
+
+// Redo move
+function redoMove() {
+    if (currentMoveIndex < moveHistory.length - 1) {
+        const move = moveHistory[currentMoveIndex + 1];
+        chess.move(move);
+        currentMoveIndex++;
+        renderBoard();
     }
 }
 
@@ -110,9 +142,18 @@ function updateGameStatus() {
 // Reset game functionality
 resetButton.addEventListener('click', () => {
     chess.reset();
+    moveHistory = [];
+    currentMoveIndex = -1;
+    selectedSquare = null;
     renderBoard();
     gameOverMessage.innerText = '';
 });
+
+// Back button functionality
+backButton.addEventListener('click', undoMove);
+
+// Forward button functionality
+forwardButton.addEventListener('click', redoMove);
 
 // Initialize the game board
 renderBoard();
